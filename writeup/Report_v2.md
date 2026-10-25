@@ -1,41 +1,30 @@
-# What We Learned Building a Cat Qubit — and a Small Experiment in Preparing One
+# What We Learned about Building a Cat Qubit and an Experiment
 
-**Introductory Track, Task 1 — DuQuantum 2026 (Alice & Bob challenge).**
-*Draft 2. Full derivations and tables are in `Task_1.0.md` – `Task_1.3.md`. All figures referenced are in `figures/`.*
-
-## The story in one paragraph
-A cat qubit stores information in which of two "valleys" a microwave oscillator sits in: the states $|+\alpha\rangle$ ($|0_L\rangle$) and $|-\alpha\rangle$ ($|1_L\rangle$), with $\alpha=2.1$. We first built up the physics one ingredient at a time (Tasks 1.0–1.2) and found something surprising: switching on the stabilization from an empty oscillator **never** lands in one valley. It always produces a "both valleys at once" cat state, which then slowly loses its quantum coherence. Our small experiment (Task 1.3) asks how to land in one valley on purpose. The answer is simple: **give the oscillator a short kick toward $+\alpha$ before switching the stabilization on (protocol A).** Almost everything we learned in the earlier tasks explains why this works so well.
-
+**Introductory Track DuQuantum 2026 (Alice & Bob challenge).**
 ---
-
-## Part 1 — What the warm-ups taught us (Tasks 1.0–1.2)
+## Part 1: What we learned from warm-ups (Tasks 1.0–1.2)
 
 **A few words we use throughout.**
 - The **memory** is the oscillator that stores the qubit. The **buffer** is a deliberately leaky helper mode used to stabilize it.
 - A **coherent state** $|\alpha\rangle$ is the most "classical" state of an oscillator: a definite amplitude and phase, plus the minimum quantum fuzz. In the phase-space pictures (Wigner plots) it is a round blob at position $\alpha$.
-- A **cat state** is two blobs at $\pm\alpha$ *at the same time*, with stripes ("fringes") between them that show the two are in superposition.
+- A **cat state** is two blobs at $\pm\alpha$ at the same time (which shows a successful superposition of $|+\alpha\rangle, |-\alpha\rangle$), with stripes between them. These stripes/fringes are what we looked for in the wigner graph to differentiate whether there was superposition or not. Not having fringes just meant there were two possibilities to converge to.
 - **Parity** asks whether the number of photons is even (+1) or odd (−1).
 - **Fidelity** (0 to 1) measures how close the state is to the one we wanted.
 
 ### 1.0(a) Losing photons one at a time doesn't damage a coherent state
-**What we did.**
-- Started the memory in a coherent state with amplitude 2, i.e. 4 photons on average.
-- Let it oscillate at 1 MHz, so the blob goes around phase space once per µs.
-- Let it leak single photons at an (exaggerated) rate $\kappa/2\pi=1$ MHz, for 1 µs.
+- Started the memory in a coherent state with amplitude 2, so there was 4 photons
+- Let it oscillate at 1 MHz, so the blob goes around phase space once per µs (given by problem)
+- Let it leak single photons at rate $\kappa/2\pi=1$ MHz, for 1 µs.
 
 **What we saw.**
-- The blob **spirals clockwise into the origin**, completing exactly one turn in 1 µs.
-- The photon number falls from 4 to 0.0075, following the textbook $4e^{-\kappa t}$ curve to within $10^{-8}$.
-- Throughout, the blob stays **round and pure**: purity never drops below 0.999996.
-- At every moment the state is the coherent state that theory predicts (fidelity > 0.999998).
-- With leakage switched off, it circles at a constant 4 photons.
+- The blob spirals into the origin completing exactly one turn in 1 µs.
+- The photon number falls from 4 to 0.0075, following the decay curve that we solved for in notebook: $4e^{-\kappa t}$.
+- Throughout, the blob stays round shape, which we can see in the wigner graph's progression in the 8 timesteps. The blob doesn't deform, so it stays coherent.
+- But without leakage switched, the graph circled at a constant 4 photons
+- The takeaway we have from this is that the one photon leakage just ends up dropping the energy levels, and without the buffer that we eventually addd, the energy level just goes to 0.
 
 **Why.**
-- A coherent state behaves like a pendulum with friction: the rotation is the oscillation and the shrinking is the friction.
-- The special feature of a coherent state is that *removing one photon leaves it a coherent state*. Mathematically, $a|\alpha\rangle=\alpha|\alpha\rangle$. So loss can only make it smaller, never distort it.
-
-**How we know it's right.** Getting one turn per µs and a factor $e^{-2\pi}$ decay at 1 µs is a direct check of our units. Forgetting a $2\pi$ would make both six times slower.
-*Figures: `1.0a_photon_number_and_trajectory.png`, `1.0a_wigner.png`.*
+- We note the eigenvector like property of a coherent state preserving the coherent state even when the photons leak: $a|\alpha\rangle=\alpha|\alpha\rangle$. So loss can only make it smaller, but the state isn't distorted (doesn't lose coherence).
 
 > **Lesson 1:** single-photon loss shrinks a coherent state but never flips it or smears it out.
 
