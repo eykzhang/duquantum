@@ -64,3 +64,22 @@ An AI assistant (Claude Code) did the following:
 - produced the literature survey `research_state_preparation.md`, via a research sub-agent. Citations marked "[unverified]" there were not checked against the source.
 
 The team must verify every derivation and re-run the notebook before presenting. In particular, check the items in the status note at the top.
+
+---
+
+## 5. Update — results from the writeup runs (2026-10-24)
+
+All numbers in `writeup/Task_1.*.md` come from standalone runs of each section. Each section ran in a separate process to avoid the memory problem described above. These runs revealed several errors in the notebook's first-draft "Results" text:
+
+| Notebook claim | Actual result |
+|---|---|
+| $F(\mathcal C_+)\approx0.9$ around 0.4–0.5 µs | max **0.84** at 0.63 µs. At 1 µs the state is $p\,\mathcal C_++(1-p)\,\mathcal C_-$ with $p=(1+\langle P\rangle)/2$, matching to <1% |
+| Phase errors up to π/4 cost almost nothing | π/8 → $F_+=0.998$; **π/4 → 0.972** |
+| The erfc estimate only captures the trend | It matches the wrong-well population to a few % for $\beta\le1.5$ |
+| Bias drive (B) best ≈ 0.983 | 0.983 at $N_a=24$; **0.9875 at $N_a=32$, 0.9877 at $N_a=40$**. B pushes the memory to 10–14 photons, so $N_a=24$ is marginal for it |
+| Decay of ringing ≈ $\kappa_b/4$ | Period matches to 1% (0.316 vs 0.319 µs). The decay rate is 4.7 /µs measured vs 4.1 predicted, because the linearization is poor for the first, large extrema |
+
+Further notes:
+- **Fidelities slightly above 1** (up to 1.0002) appear with square pulses. This is solver tolerance, so fidelities are only meaningful to about $10^{-4}$.
+- **The research file had a sign error**, now fixed: the bit-flip time *grows* like $e^{+2\alpha^2}$.
+- **Scope decision:** for 1.3(b) the team is reporting protocols A, A′ and B only. The notebook still contains cells for C (measure and post-select) and D (Zeno-drive control).
