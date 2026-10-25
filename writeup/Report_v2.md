@@ -40,24 +40,23 @@ A cat qubit stores information in which of two "valleys" a microwave oscillator 
 > **Lesson 1:** single-photon loss shrinks a coherent state but never flips it or smears it out.
 
 ### 1.0(b) Losing photons in pairs remembers whether the photon number was even or odd
-**What we did.** Same starting state, but now the only process is losing photons **two at a time**, at the rate $\kappa_2$ that the real device provides. No rotation, no drive.
+**What we did.** Same starting state, but now the only process is losing photons **two at a time**, at the rate $\kappa_2$ that the real device provides.
 
 **What we saw.**
 - The photon number drops very fast at first: 4 → 2.2 in 20 ns → 0.90 in 100 ns.
-- Then it **stalls**: 0.50 at 500 ns, and **0.4998** from 1 µs onward.
+- Then it stalls: 0.50 at 500 ns, and stays at 0.4998 from 1 µs onward.
 - At the end the memory is 50.02% in the empty state $|0\rangle$ and 49.98% in the one-photon state $|1\rangle$.
 
 **Why.**
-- Pair loss can't act on $|0\rangle$ or $|1\rangle$: you can't remove two photons from fewer than two. Those are the only "untouched" states.
-- Only **9%** of the initial state was in them, so the plateau is *not* "what was left alone".
-- The real reason: pair loss **never changes whether the photon number is even or odd**. Every even component slides down to $|0\rangle$ and every odd component to $|1\rangle$. A coherent state with 4 photons is almost exactly half even and half odd, hence the 0.4998.
-- The fast-then-slow shape comes from the pair-loss rate growing like the photon number *squared*, so it collapses as photons disappear.
+- Pair loss can't act on $|0\rangle$ or $|1\rangle$: you can't remove two photons from fewer than two. Those are the only untouched states.
+- Only 9% of the initial state was in them, so it cannot just be the parts that were unaffected thus the other states must approach these ones overtime.
+- The real reason: pair loss never changes whether the photon number is even or odd. Every even component slides down to $|0\rangle$ and every odd component to $|1\rangle$. A coherent state with 4 photons is almost exactly half even and half odd, hence the 0.4998.
+- The fast-then-slow shape comes from the pair-loss rate relating to the photon number squared, so it decreases quickly as photons disappear.
 
-**How we know it's right.**
+**How we verified it**
 - The parity-based prediction, $(1-e^{-8})/2=0.499832$, matches the simulation to six digits.
 - The measured parity is unchanged from start to finish.
 
-*(Honest note: our first guess was that the plateau would be the 9% "untouched" part. The simulation proved us wrong and pointed us to parity.)*
 *Figure: `1.0b_two_photon_loss.png`.*
 
 > **Lesson 2:** pair processes cannot change parity. Whatever parity you start with, you keep.
@@ -87,30 +86,27 @@ A cat qubit stores information in which of two "valleys" a microwave oscillator 
 
 > **Lesson 3:** $|+\alpha\rangle$ and $|-\alpha\rangle$ are *resting points*. A state already sitting on one has nothing to correct.
 
-### 1.1 The real two-mode device is wilder than the simple model
-**What we did.** Simulated the actual mechanism, still starting from vacuum in both modes, for 4 µs:
-- two memory photons convert into one buffer photon and back;
-- the buffer leaks quickly;
-- the buffer is driven.
+### 1.1 The real two-mode device differs from the simple model
+**What we did.** Simulated the actual mechanism, still starting from vacuum in both modes, for 4 µs
 
 **What we saw.**
-- **The buffer fills first**, peaking at about **2 photons** at 130 ns.
-- **The memory then overshoots** to **6.9 photons** at 230 ns, 56% more than the target.
-- The memory **rings** with a period of about 0.32 µs. It is within 1% of its final value after about **1.06 µs**.
+- The buffer fills first, peaking at about 2 photons at 130 ns.
+- The memory then overshoots to 6.9 photons at 230 ns, 56% more than the target.
+- The memory rings with a period of about 0.32 µs. It is within 1% of its final value after about 1.06 µs.
 - The final memory photon number is 4.403, the same as the simple model. The buffer drains to almost nothing ($2\times10^{-5}$ photons).
 - In the Wigner snapshots:
-  - the blob is first **squeezed** into a thin horizontal streak;
-  - it then splits into two lobes, which swing *past* ±2.1 during the overshoot and come back;
+  - the blob is first squeezed into a thin horizontal streak;
+  - it then splits into two lobes, which swing past ±2.1 during the overshoot and come back;
   - the fringes between the lobes slowly fade between 1 µs and 4 µs.
 
 **Why.**
-- The simple model assumes the buffer drains instantly, like a bucket with a huge hole. For these device parameters the hole isn't big enough: the buffer leak rate is only about 3× the coupling and *smaller* than the drive.
-- So photons pile up in the buffer, pour into the memory faster than they can escape, and **slosh back and forth** before settling.
-- A small analytic model of this sloshing predicts the ringing period (0.319 µs vs 0.316 µs measured) with no fitting.
+- The simple model assumes the buffer drains instantly. For these device parameters the buffer drain isn't big enough and has a smaller rate than the drive.
+- So photons pile up in the buffer, pour into the memory faster, and go between memory and buffer multiple times before settling.
+- A small analytic model of this predicts the ringing period (0.319 µs vs 0.316 µs measured) with no fitting.
 
-**How we know it's right.**
+**How we verify**
 - We tracked how much population reached the highest simulated levels. It stayed at about $10^{-3}$ or below.
-- With the README's suggested buffer size, 4.6% of the population piled up in its top level, which was a warning sign (see 1.2).
+- With the suggested buffer size, 4.6% of the population piled up in its top level, which was a warning sign (more in 1.2).
 
 *Figures: `1.1_photon_numbers_truncation.png`, `1.1_vs_effective.png`, `1.1_wigner_mosaic.png`.*
 
