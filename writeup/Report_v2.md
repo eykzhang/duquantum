@@ -29,24 +29,23 @@
 > **Lesson 1:** single-photon loss shrinks a coherent state but never flips it or smears it out.
 
 ### 1.0(b) Losing photons in pairs remembers whether the photon number was even or odd
-**What we did.** Same starting state, but now the only process is losing photons **two at a time**, at the rate $\kappa_2$ that the real device provides. No rotation, no drive.
+**What we did.** Same starting state, but now the only process is losing photons **two at a time**, at the rate $\kappa_2$ that the real device provides.
 
 **What we saw.**
 - The photon number drops very fast at first: 4 → 2.2 in 20 ns → 0.90 in 100 ns.
-- Then it **stalls**: 0.50 at 500 ns, and **0.4998** from 1 µs onward.
+- Then it stalls: 0.50 at 500 ns, and stays at 0.4998 from 1 µs onward.
 - At the end the memory is 50.02% in the empty state $|0\rangle$ and 49.98% in the one-photon state $|1\rangle$.
 
 **Why.**
-- Pair loss can't act on $|0\rangle$ or $|1\rangle$: you can't remove two photons from fewer than two. Those are the only "untouched" states.
-- Only **9%** of the initial state was in them, so the plateau is *not* "what was left alone".
-- The real reason: pair loss **never changes whether the photon number is even or odd**. Every even component slides down to $|0\rangle$ and every odd component to $|1\rangle$. A coherent state with 4 photons is almost exactly half even and half odd, hence the 0.4998.
-- The fast-then-slow shape comes from the pair-loss rate growing like the photon number *squared*, so it collapses as photons disappear.
+- Pair loss can't act on $|0\rangle$ or $|1\rangle$: you can't remove two photons from fewer than two. Those are the only untouched states.
+- Only 9% of the initial state was in them, so it cannot just be the parts that were unaffected thus the other states must approach these ones overtime.
+- The real reason: pair loss never changes whether the photon number is even or odd. Every even component slides down to $|0\rangle$ and every odd component to $|1\rangle$. A coherent state with 4 photons is almost exactly half even and half odd, hence the 0.4998.
+- The fast-then-slow shape comes from the pair-loss rate relating to the photon number squared, so it decreases quickly as photons disappear.
 
-**How we know it's right.**
+**How we verified it**
 - The parity-based prediction, $(1-e^{-8})/2=0.499832$, matches the simulation to six digits.
 - The measured parity is unchanged from start to finish.
 
-*(Honest note: our first guess was that the plateau would be the 9% "untouched" part. The simulation proved us wrong and pointed us to parity.)*
 *Figure: `1.0b_two_photon_loss.png`.*
 
 > **Lesson 2:** pair processes cannot change parity. Whatever parity you start with, you keep.
@@ -76,30 +75,27 @@
 
 > **Lesson 3:** $|+\alpha\rangle$ and $|-\alpha\rangle$ are *resting points*. A state already sitting on one has nothing to correct.
 
-### 1.1 The real two-mode device is wilder than the simple model
-**What we did.** Simulated the actual mechanism, still starting from vacuum in both modes, for 4 µs:
-- two memory photons convert into one buffer photon and back;
-- the buffer leaks quickly;
-- the buffer is driven.
+### 1.1 The real two-mode device differs from the simple model
+**What we did.** Simulated the actual mechanism, still starting from vacuum in both modes, for 4 µs
 
 **What we saw.**
-- **The buffer fills first**, peaking at about **2 photons** at 130 ns.
-- **The memory then overshoots** to **6.9 photons** at 230 ns, 56% more than the target.
-- The memory **rings** with a period of about 0.32 µs. It is within 1% of its final value after about **1.06 µs**.
+- The buffer fills first, peaking at about 2 photons at 130 ns.
+- The memory then overshoots to 6.9 photons at 230 ns, 56% more than the target.
+- The memory rings with a period of about 0.32 µs. It is within 1% of its final value after about 1.06 µs.
 - The final memory photon number is 4.403, the same as the simple model. The buffer drains to almost nothing ($2\times10^{-5}$ photons).
 - In the Wigner snapshots:
-  - the blob is first **squeezed** into a thin horizontal streak;
-  - it then splits into two lobes, which swing *past* ±2.1 during the overshoot and come back;
+  - the blob is first squeezed into a thin horizontal streak;
+  - it then splits into two lobes, which swing past ±2.1 during the overshoot and come back;
   - the fringes between the lobes slowly fade between 1 µs and 4 µs.
 
 **Why.**
-- The simple model assumes the buffer drains instantly, like a bucket with a huge hole. For these device parameters the hole isn't big enough: the buffer leak rate is only about 3× the coupling and *smaller* than the drive.
-- So photons pile up in the buffer, pour into the memory faster than they can escape, and **slosh back and forth** before settling.
-- A small analytic model of this sloshing predicts the ringing period (0.319 µs vs 0.316 µs measured) with no fitting.
+- The simple model assumes the buffer drains instantly. For these device parameters the buffer drain isn't big enough and has a smaller rate than the drive.
+- So photons pile up in the buffer, pour into the memory faster, and go between memory and buffer multiple times before settling.
+- A small analytic model of this predicts the ringing period (0.319 µs vs 0.316 µs measured) with no fitting.
 
-**How we know it's right.**
+**How we verify**
 - We tracked how much population reached the highest simulated levels. It stayed at about $10^{-3}$ or below.
-- With the README's suggested buffer size, 4.6% of the population piled up in its top level, which was a warning sign (see 1.2).
+- With the suggested buffer size, 4.6% of the population piled up in its top level, which was a warning sign (more in 1.2).
 
 *Figures: `1.1_photon_numbers_truncation.png`, `1.1_vs_effective.png`, `1.1_wigner_mosaic.png`.*
 
@@ -108,14 +104,17 @@
 ### 1.2 The steady state is easy to simulate; the transient is not
 **What we did.**
 - Compared the final photon number with a back-of-the-envelope (semiclassical) prediction.
-- Ran a **convergence study**: repeated the 1.1 simulation while changing how many energy levels we keep for the memory (16–32) and for the buffer (4–14).
+- Ran a **convergence study**: repeated the 1.1 simulation while changing how many energy levels we keep for the memory (16–32, buffer fixed at 12) and for the buffer (4–14, memory fixed at 24), one at a time.
+- Tracked two numbers from the memory's photon-number curve: the **final value** (averaged over 3–4 µs) and the **peak of the overshoot**. Each run is compared with the largest run in its scan, which stands in for "infinitely many levels". We call a result converged if it is within **0.1%** (final value) or **0.5%** (peak) of that reference.
+- As an independent check, we recorded the largest probability, at any time, of finding each mode in its top levels. If that is large, the cut-off is clipping real physics.
 
 **What we saw.**
 - **Final photon number.**
   - Prediction ignoring photon loss: 4.410.
   - Prediction including it: 4.405.
   - Simulation: **4.403**.
-  - The small deficit is real physics (the leak pulls the valleys inward), not a numerical error.
+  - The small deficit is real physics, not a numerical error: it is identical for every truncation we tried. Most of it (0.0052 of the 0.0073) is explained by the memory's single-photon leak, which keeps draining photons while the pair drive refills them, so the valleys sit slightly inward.
+  - The last 0.002 (0.05%) is not explained by the simple prediction. We have not identified its origin.
 - **Convergence.**
 
 | Buffer levels kept | 4 | 6 (README default) | 8 | 10 | 12 | 14 |
@@ -133,7 +132,19 @@
 - The **overshoot is not calm**. The buffer briefly holds about 2 photons with a broad spread, and the memory about 7. Cutting off too few buffer levels clips exactly the photons that cause the overshoot.
 - With only 4 buffer levels the overshoot vanishes, and the result *looks like the simple model*. A badly truncated simulation could have convinced us the simple model was fine.
 
-**What we chose.** 24 memory levels and 12 buffer levels, converged for both the final value and the peak.
+**Smallest converged truncation.**
+
+| Quantity (tolerance) | memory levels | buffer levels |
+|---|---|---|
+| final value (0.1%) | 16 (smallest tried) | 4 (smallest tried) |
+| overshoot peak (0.5%) | 24 | 10 |
+
+- **The too-small truncation is the README's 6 buffer levels.** It gives a perfect final value but an overshoot peak 11% too low, and 4.6% of the population piles up in its top buffer level. Checking only the final value would have hidden the error.
+- The top-level check agrees with the convergence scan: every run whose peak was off by more than 1% had close to 1% or more of its population in its top levels at some point, while converged runs stayed at about 0.2% or below.
+
+**What we chose.** 24 memory levels and 12 buffer levels, converged for both the final value and the peak with margin (12 vs 14 buffer levels agree to 0.002%).
+
+**Open question.** Going from 24 to 32 memory levels, the population in the top memory levels only halves (0.2% → 0.1%). For a memory holding about 7 photons we would expect almost nothing near level 30. The peak still converges, so the conclusions hold. Our unconfirmed guess is that the memory is briefly squeezed early in the inflation, which gives a long tail in photon number. See `Task_1.2.md`.
 *Figure: `1.2_convergence.png`.*
 
 > **Lesson 5:** the calm, low-photon parts of the dynamics are cheap and safe to simulate. The violent parts are where errors hide. Always check convergence on the quantity you actually report.
