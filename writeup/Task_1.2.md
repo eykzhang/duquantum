@@ -19,7 +19,7 @@ $$0=-\frac{4g_2}{\kappa_b}\,a\,(g_2a^2-\epsilon_d)-\frac{\kappa_a}{2}a\quad\Long
 - The small deficit is a **real physical effect, not a numerical artifact**:
   1. It is identical, 4.4027, for *every* truncation we tried (table below), so it is not caused by the cut-off.
   2. Most of it, 0.0052 of the 0.0073, is explained quantitatively by single-photon loss: $\kappa_a$ constantly removes photons, so the balance point sits slightly inside $\alpha$.
-  3. The remaining 0.002 (0.05%) is beyond mean-field theory. Quantum corrections from the cat's photon statistics are of this order, but we did not pin this residual down further.
+  3. The remaining 0.0021 (0.05%) is not captured by the mean-field calculation, which treats the memory as a classical amplitude. We expect quantum corrections beyond mean field, but we have **not** identified the origin of this residual. It is the same at every truncation, so it is not a truncation artifact.
 
 ## Part 2: convergence study
 
@@ -31,6 +31,7 @@ $$0=-\frac{4g_2}{\kappa_b}\,a\,(g_2a^2-\epsilon_d)-\frac{\kappa_a}{2}a\quad\Long
   - the **steady state**, $\langle a^\dagger a\rangle$ averaged over $t\in[3,4]$ µs;
   - the **transient peak**, $\max_t\langle a^\dagger a\rangle$ during the overshoot.
 - **Tolerances**, relative to the largest truncation in each scan: **0.1%** for the steady state and **0.5%** for the peak. The peak is a sharper, harder-to-converge feature, and 0.5% is well below anything visible on a plot.
+- **What "converged" means here.** We have no infinite-truncation answer to compare with, so the largest run in each scan ($N_a=32$, $N_b=14$) serves as the reference. A run is converged if it agrees with that reference within the tolerance. The independent evidence that the reference itself is trustworthy is the top-level population monitor (last columns of the tables): the largest probability, at any time during the run, of finding the memory in its top two levels or the buffer in its top level.
 
 ### Results
 ![convergence](figures/1.2_convergence.png)
@@ -67,7 +68,7 @@ $$0=-\frac{4g_2}{\kappa_b}\,a\,(g_2a^2-\epsilon_d)-\frac{\kappa_a}{2}a\quad\Long
 **The steady state hardly cares about truncation.**
 - *Buffer:* at steady state it is essentially empty ($\langle b^\dagger b\rangle\sim10^{-5}$), so even 4 buffer levels describe it exactly.
 - *Memory:* it holds a cat with mean photon number 4.4. Its photon distribution is roughly Poissonian, and the weight above $n\approx14$ is negligible, so 16 levels are enough.
-- **The steady state is an attractor.** Even when the truncation distorts the transient (for $N_a=16$, 5.7% of the population sits in the top levels at the peak), the dissipation pulls the state back to the same final point. The error made on the way in is "forgotten".
+- **The steady state is an attractor.** Even when the truncation distorts the transient (for $N_a=16$, up to 5.7% of the population sits in the top two memory levels at some point during the run), the dissipation pulls the state back to the same final point. The error made on the way in is "forgotten".
 
 **The transient peak is sensitive, mostly to $N_b$.**
 - During inflation the buffer is strongly excited. It is driven toward about 6.7 photons and holds about 2 on average, with a broad distribution.
@@ -79,10 +80,11 @@ $$0=-\frac{4g_2}{\kappa_b}\,a\,(g_2a^2-\epsilon_d)-\frac{\kappa_a}{2}a\quad\Long
 
 **Answer to "which starting truncation is too small?"** It is $N_b=6$. It gives the right steady state but an overshoot peak that is 11% too low.
 
-**Our working choice:** $N_a=24$, $N_b=12$, which converges both quantities with margin. A 4 µs run takes about 50 s on a laptop CPU.
+**Our working choice:** $N_a=24$, $N_b=12$. It converges both quantities with margin: the peak needs $N_b\ge10$, and $N_b=12$ agrees with $N_b=14$ to 0.002%.
 
 ## Notes, issues and lessons from Task 1.2
 - **Lesson: "converged final value" ≠ "converged simulation".** The steady state passes the convergence test at every truncation. Only the transient reveals that $N_b=6$ is wrong. Convergence must be checked on the quantity you actually report.
-- **Monitoring top-level populations is a good early warning.** Every run whose peak was off by more than 1% had more than about 1% population in its top levels at some time. Every converged run stayed around $10^{-3}$ or below.
+- **Monitoring top-level populations is a good early warning.** Every run whose peak was off by more than 1% had close to 1% or more population in its top levels at some time ($N_b=8$: 0.86%, peak −2.1%; $N_a=20$: 1.3%, peak −1.4%). Every converged run stayed at about $2\times10^{-3}$ or below.
 - **The same check applies to Task 1.3.** Protocols that drive the memory harder push it to higher photon numbers, and they need a larger $N_a$ (see Task 1.3).
-- **Runtime scales steeply.** The density matrix has $(N_aN_b)^2$ entries: about 7 s for $(24,4)$ versus about 140 s for $(32,12)$. That is why we vary one truncation at a time.
+- **Runtime scales steeply.** The density matrix has $(N_aN_b)^2$ entries. On one teammate's machine a 4 µs run took about 6 s at $(24,4)$, 43 s at $(24,12)$ and 106 s at $(32,12)$; another machine ran the whole scan in about 5–6 s per run. Absolute times are machine-dependent, but the scaling is why we vary one truncation at a time.
+- **Open question: a tail in the memory's photon distribution.** Going from $N_a=24$ to 32, the top-level memory population only halves ($2.0\times10^{-3}\to1.0\times10^{-3}$). If the memory were a Poisson-like distribution around 7 photons at the peak, levels near $n=30$ would be essentially empty. The peak still converges (0.16% between 24 and 32), so our conclusions stand. A likely explanation, **not yet checked**, is that the memory is briefly squeezed early in the inflation (the Wigner snapshots in Task 1.1 show the blob stretched along one axis), and squeezed states have long photon-number tails. To check: plot the top-level population against time for the $N_a=32$ run and see whether its maximum falls in the first ~100 ns.
