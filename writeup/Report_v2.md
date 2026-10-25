@@ -115,14 +115,17 @@ A cat qubit stores information in which of two "valleys" a microwave oscillator 
 ### 1.2 The steady state is easy to simulate; the transient is not
 **What we did.**
 - Compared the final photon number with a back-of-the-envelope (semiclassical) prediction.
-- Ran a **convergence study**: repeated the 1.1 simulation while changing how many energy levels we keep for the memory (16–32) and for the buffer (4–14).
+- Ran a **convergence study**: repeated the 1.1 simulation while changing how many energy levels we keep for the memory (16–32, buffer fixed at 12) and for the buffer (4–14, memory fixed at 24), one at a time.
+- Tracked two numbers from the memory's photon-number curve: the **final value** (averaged over 3–4 µs) and the **peak of the overshoot**. Each run is compared with the largest run in its scan, which stands in for "infinitely many levels". We call a result converged if it is within **0.1%** (final value) or **0.5%** (peak) of that reference.
+- As an independent check, we recorded the largest probability, at any time, of finding each mode in its top levels. If that is large, the cut-off is clipping real physics.
 
 **What we saw.**
 - **Final photon number.**
   - Prediction ignoring photon loss: 4.410.
   - Prediction including it: 4.405.
   - Simulation: **4.403**.
-  - The small deficit is real physics (the leak pulls the valleys inward), not a numerical error.
+  - The small deficit is real physics, not a numerical error: it is identical for every truncation we tried. Most of it (0.0052 of the 0.0073) is explained by the memory's single-photon leak, which keeps draining photons while the pair drive refills them, so the valleys sit slightly inward.
+  - The last 0.002 (0.05%) is not explained by the simple prediction. We have not identified its origin.
 - **Convergence.**
 
 | Buffer levels kept | 4 | 6 (README default) | 8 | 10 | 12 | 14 |
@@ -140,7 +143,19 @@ A cat qubit stores information in which of two "valleys" a microwave oscillator 
 - The **overshoot is not calm**. The buffer briefly holds about 2 photons with a broad spread, and the memory about 7. Cutting off too few buffer levels clips exactly the photons that cause the overshoot.
 - With only 4 buffer levels the overshoot vanishes, and the result *looks like the simple model*. A badly truncated simulation could have convinced us the simple model was fine.
 
-**What we chose.** 24 memory levels and 12 buffer levels, converged for both the final value and the peak.
+**Smallest converged truncation.**
+
+| Quantity (tolerance) | memory levels | buffer levels |
+|---|---|---|
+| final value (0.1%) | 16 (smallest tried) | 4 (smallest tried) |
+| overshoot peak (0.5%) | 24 | 10 |
+
+- **The too-small truncation is the README's 6 buffer levels.** It gives a perfect final value but an overshoot peak 11% too low, and 4.6% of the population piles up in its top buffer level. Checking only the final value would have hidden the error.
+- The top-level check agrees with the convergence scan: every run whose peak was off by more than 1% had close to 1% or more of its population in its top levels at some point, while converged runs stayed at about 0.2% or below.
+
+**What we chose.** 24 memory levels and 12 buffer levels, converged for both the final value and the peak with margin (12 vs 14 buffer levels agree to 0.002%).
+
+**Open question.** Going from 24 to 32 memory levels, the population in the top memory levels only halves (0.2% → 0.1%). For a memory holding about 7 photons we would expect almost nothing near level 30. The peak still converges, so the conclusions hold. Our unconfirmed guess is that the memory is briefly squeezed early in the inflation, which gives a long tail in photon number. See `Task_1.2.md`.
 *Figure: `1.2_convergence.png`.*
 
 > **Lesson 5:** the calm, low-photon parts of the dynamics are cheap and safe to simulate. The violent parts are where errors hide. Always check convergence on the quantity you actually report.
