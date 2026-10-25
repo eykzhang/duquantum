@@ -266,4 +266,4 @@ Each would add some error. The robustness experiment suggests the stabilization 
 - Add a realistic pulse shape, memory Kerr and pump switch-on dynamics, and re-measure the robustness map.
 - Measure how long a protocol-A state keeps its valley under realistic noise, connecting preparation to the bit-flip and phase-flip rates studied in the Standard Track.
 
-*AI use: an AI assistant (Claude Code) helped write the code and text and ran the simulations. The team must verify, and be able to defend, every result.*
+*AI use: we used an AI assistant (Claude Code) helped write the code and text, but we verified each run and gave it the parameters to test. 
