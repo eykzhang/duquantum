@@ -1,231 +1,269 @@
-# duquantum
-team mclovin on the Alice &amp; Bob track.
+# What We Learned about Building a Cat Qubit and an Experiment
 
-# Alice & Bob Challenge — Cat Qubits — DuQuantum 2026
+**Introductory Track DuQuantum 2026 (Alice & Bob challenge).**
 ---
-## 0. Read this first
-### 0.1 Which track should I pick?
-| | Introductory Track | Standard Track |
+## Part 1: What we learned from warm-ups (Tasks 1.0–1.2)
+
+**A few words we use throughout.**
+- The **memory** is the oscillator that stores the qubit. The **buffer** is a deliberately leaky helper mode used to stabilize it.
+- A **coherent state** $|\alpha\rangle$ is the most "classical" state of an oscillator: a definite amplitude and phase, plus the minimum quantum fuzz. In the phase-space pictures (Wigner plots) it is a round blob at position $\alpha$.
+- A **cat state** is two blobs at $\pm\alpha$ at the same time (which shows a successful superposition of $|+\alpha\rangle, |-\alpha\rangle$), with stripes between them. These stripes/fringes are what we looked for in the wigner graph to differentiate whether there was superposition or not. Not having fringes just meant there were two possibilities to converge to.
+- **Parity** asks whether the number of photons is even (+1) or odd (−1).
+- **Fidelity** (0 to 1) measures how close the state is to the one we wanted.
+
+### 1.0(a) Losing photons one at a time doesn't damage a coherent state
+- Started the memory in a coherent state with amplitude 2, so there was 4 photons
+- Let it oscillate at 1 MHz, so the blob goes around phase space once per µs (given by problem)
+- Let it leak single photons at rate $\kappa/2\pi=1$ MHz, for 1 µs.
+
+**What we saw.**
+- The blob spirals into the origin completing exactly one turn in 1 µs.
+- The photon number falls from 4 to 0.0075, following the decay curve that we solved for in notebook: $4e^{-\kappa t}$.
+- Throughout, the blob stays round shape, which we can see in the wigner graph's progression in the 8 timesteps. The blob doesn't deform, so it stays coherent.
+- But without leakage switched, the graph circled at a constant 4 photons
+- The takeaway we have from this is that the one photon leakage just ends up dropping the energy levels, and without the buffer that we eventually addd, the energy level just goes to 0.
+
+**Why.**
+- We note the eigenvector like property of a coherent state preserving the coherent state even when the photons leak: $a|\alpha\rangle=\alpha|\alpha\rangle$. So loss can only make it smaller, but the state isn't distorted (doesn't lose coherence).
+
+> **Lesson 1:** single-photon loss shrinks a coherent state but never flips it or smears it out.
+
+### 1.0(b) Losing photons in pairs remembers whether the photon number was even or odd
+**What we did.** Same starting state, but now the only process is losing photons **two at a time**, at the rate $\kappa_2$ that the real device provides.
+
+**What we saw.**
+- The photon number drops very fast at first: 4 → 2.2 in 20 ns → 0.90 in 100 ns.
+- Then it stalls: 0.50 at 500 ns, and stays at 0.4998 from 1 µs onward.
+- At the end the memory is 50.02% in the empty state $|0\rangle$ and 49.98% in the one-photon state $|1\rangle$.
+
+**Why.**
+- Pair loss can't act on $|0\rangle$ or $|1\rangle$: you can't remove two photons from fewer than two. Those are the only untouched states.
+- Only 9% of the initial state was in them, so it cannot just be the parts that were unaffected thus the other states must approach these ones overtime.
+- The real reason: pair loss never changes whether the photon number is even or odd. Every even component slides down to $|0\rangle$ and every odd component to $|1\rangle$. A coherent state with 4 photons is almost exactly half even and half odd, hence the 0.4998.
+- The fast-then-slow shape comes from the pair-loss rate relating to the photon number squared, so it decreases quickly as photons disappear.
+
+**How we verified it**
+- The parity-based prediction, $(1-e^{-8})/2=0.499832$, matches the simulation to six digits.
+- The measured parity is unchanged from start to finish.
+
+*Figure: `1.0b_two_photon_loss.png`.*
+
+> **Lesson 2:** pair processes cannot change parity. Whatever parity you start with, you keep.
+
+### 1.0(c) Pair loss plus pair drive creates two stable valleys
+**What we did.**
+- Combined pair loss with a pair *drive*, using the simplified one-mode model of the stabilization, and kept the weak single-photon leak.
+- Started from vacuum and ran for 2 µs.
+- Repeated with the stabilization 4× weaker and 4× stronger.
+
+**What we saw.**
+
+| Stabilization strength | 4× weaker | nominal | 4× stronger |
+|---|---|---|---|
+| time to reach 90% of final photon number | 610 ns | 155 ns | 40 ns |
+| final photon number | 4.387 | 4.404 | 4.408 |
+
+- The photon number rises **smoothly, with no overshoot**, to about 4.40. That is very close to the target $\alpha^2=4.41$.
+- The Wigner picture shows the vacuum blob stretching sideways and **splitting into two blobs at ±2.1, with fringes between them**: a cat.
+
+**Why.**
+- The stabilization has two **resting points**, $|+\alpha\rangle$ and $|-\alpha\rangle$. Any state there is left alone, and every other state is pushed toward them, like two valleys.
+- The strength only sets *how fast* the state rolls in, not *where* it ends up. With the leak switched off, the three curves become **identical** (to $10^{-6}$) once time is rescaled by the strength. The leak adds a tiny correction: it pulls the resting point slightly inward, more so when the stabilization is weak, which explains the small spread in the final values.
+
+**Foreshadowing.** The parity has already dropped to about 0.37 after 2 µs. Something is slowly eroding the cat; see 1.3(a).
+*Figures: `1.0c_stabilization_kappa2_scan.png`, `1.0c_wigner.png`.*
+
+> **Lesson 3:** $|+\alpha\rangle$ and $|-\alpha\rangle$ are *resting points*. A state already sitting on one has nothing to correct.
+
+### 1.1 The real two-mode device differs from the simple model
+**What we did.** Simulated the actual mechanism, still starting from vacuum in both modes, for 4 µs
+
+**What we saw.**
+- The buffer fills first, peaking at about 2 photons at 130 ns.
+- The memory then overshoots to 6.9 photons at 230 ns, 56% more than the target.
+- The memory rings with a period of about 0.32 µs. It is within 1% of its final value after about 1.06 µs.
+- The final memory photon number is 4.403, the same as the simple model. The buffer drains to almost nothing ($2\times10^{-5}$ photons).
+- In the Wigner snapshots:
+  - the blob is first squeezed into a thin horizontal streak;
+  - it then splits into two lobes, which swing past ±2.1 during the overshoot and come back;
+  - the fringes between the lobes slowly fade between 1 µs and 4 µs.
+
+**Why.**
+- The simple model assumes the buffer drains instantly. For these device parameters the buffer drain isn't big enough and has a smaller rate than the drive.
+- So photons pile up in the buffer, pour into the memory faster, and go between memory and buffer multiple times before settling.
+- A small analytic model of this predicts the ringing period (0.319 µs vs 0.316 µs measured) with no fitting.
+
+**How we verify**
+- We tracked how much population reached the highest simulated levels. It stayed at about $10^{-3}$ or below.
+- With the suggested buffer size, 4.6% of the population piled up in its top level, which was a warning sign (more in 1.2).
+
+*Figures: `1.1_photon_numbers_truncation.png`, `1.1_vs_effective.png`, `1.1_wigner_mosaic.png`.*
+
+> **Lesson 4:** inflating a cat from vacuum is a violent transient: overshoot, ringing, a busy buffer. The simple model gets the destination right but the journey wrong.
+
+### 1.2 The steady state is easy to simulate; the transient is not
+**What we did.**
+- Compared the final photon number with a back-of-the-envelope (semiclassical) prediction.
+- Ran a **convergence study**: repeated the 1.1 simulation while changing how many energy levels we keep for the memory (16–32, buffer fixed at 12) and for the buffer (4–14, memory fixed at 24), one at a time.
+- Tracked two numbers from the memory's photon-number curve: the **final value** (averaged over 3–4 µs) and the **peak of the overshoot**. Each run is compared with the largest run in its scan, which stands in for "infinitely many levels". We call a result converged if it is within **0.1%** (final value) or **0.5%** (peak) of that reference.
+- As an independent check, we recorded the largest probability, at any time, of finding each mode in its top levels. If that is large, the cut-off is clipping real physics.
+
+**What we saw.**
+- **Final photon number.**
+  - Prediction ignoring photon loss: 4.410.
+  - Prediction including it: 4.405.
+  - Simulation: **4.403**.
+  - The small deficit is real physics, not a numerical error: it is identical for every truncation we tried. Most of it (0.0052 of the 0.0073) is explained by the memory's single-photon leak, which keeps draining photons while the pair drive refills them, so the valleys sit slightly inward.
+  - The last 0.002 (0.05%) is not explained by the simple prediction. We have not identified its origin.
+- **Convergence.**
+
+| Buffer levels kept | 4 | 6 (README default) | 8 | 10 | 12 | 14 |
+|---|---|---|---|---|---|---|
+| peak memory photons | 4.46 (**no overshoot!**) | 6.11 (−11%) | 6.74 (−2%) | 6.87 | 6.88 | 6.88 |
+| final memory photons | 4.403 | 4.403 | 4.403 | 4.403 | 4.403 | 4.403 |
+
+| Memory levels kept | 16 | 20 | 24 | 32 |
+|---|---|---|---|---|
+| peak memory photons | 6.37 (−8%) | 6.80 (−1.4%) | 6.88 | 6.89 |
+| final memory photons | 4.406 | 4.403 | 4.403 | 4.403 |
+
+**Why.**
+- The **final state is calm**: about 4.4 photons in the memory and an empty buffer, so even small simulations describe it perfectly. It is also an *attractor*: even when a too-small simulation distorts the journey, the state still ends up in the same place.
+- The **overshoot is not calm**. The buffer briefly holds about 2 photons with a broad spread, and the memory about 7. Cutting off too few buffer levels clips exactly the photons that cause the overshoot.
+- With only 4 buffer levels the overshoot vanishes, and the result *looks like the simple model*. A badly truncated simulation could have convinced us the simple model was fine.
+
+**Smallest converged truncation.**
+
+| Quantity (tolerance) | memory levels | buffer levels |
 |---|---|---|
-| Who it's for | You've seen basic quantum mechanics (states, operators, the Schrödinger equation) but not necessarily second quantization or open quantum systems. | You're comfortable with creation/annihilation operators and the Lindblad master equation (or at least the Heisenberg picture). |
-| What you'll do | Build intuition for a dissipative cat qubit step by step, then prepare a cat qubit and a logical basis state. | Measure the qubit's error rates, design a readout, and optimize it at the circuit level. |
-| Section | Section 1 | Section 2 |
-**Standard Track teams:** you are judged on Section 2 only, but Section 2 reuses the code you build in Tasks 1.0(c) and 1.1. We recommend working through those two quickly (they also serve as a check that your setup is correct) before starting Section 2.
-### 0.2 Resources
-- **Tutorials** ([challenge/resources](https://github.com/YQuantum-2026/Alice-Bob-Challenge/tree/main/challenge/resources)). Work through them in this order:
-  1. `Tutorial__Dynamiqs.ipynb` — how to use `dynamiqs`: building operators, `sesolve`/`mesolve`, Wigner plots, gradients, and batching (running parameter sweeps in one call).
-  2. `Tutorial__OpenQuantumSystems.ipynb` — density matrices and the Lindblad master equation.
-  3. `Tutorial__Introduction_to_Cats.ipynb` — why cat qubits, coherent and cat states, two-photon dissipation, and the memory–buffer mechanism.
-- **Background in this document:** Section B below fills in what the tutorials assume you already know (what a mode is, creation and annihilation operators, what a Wigner function shows, what dissipation means physically, Hilbert-space truncation) and connects the tutorial notation to the notation used here. You do not need to read any papers to complete the Introductory Track.
-- **Optional further reading:**
-  - Review of bosonic qubits (cat qubits, Wigner functions, and more): A. Joshi, K. Noh, Y. Y. Gao, "Quantum information processing with bosonic qubits in circuit QED," [arXiv:2008.13471](https://arxiv.org/abs/2008.13471).
-  - Pedagogical introduction to the Lindblad equation: D. Manzano, "A short introduction to the Lindblad master equation," [arXiv:1906.04478](https://arxiv.org/abs/1906.04478).
-  - Circuit QED (how photons live in superconducting circuits): A. Blais *et al.*, "Circuit quantum electrodynamics," [arXiv:2005.12667](https://arxiv.org/abs/2005.12667).
-  - The experiment our parameters come from: U. Réglade, A. Bocquet *et al.*, "Quantum control of a cat qubit with bit-flip times exceeding ten seconds," [arXiv:2307.06617](https://arxiv.org/abs/2307.06617).
-  - Why cat qubits make error correction cheaper: J. Guillaud, M. Mirrahimi, "Repetition cat qubits for fault-tolerant quantum computation," [arXiv:1904.09474](https://arxiv.org/abs/1904.09474).
-### 0.3 AI policy
-You **may** use AI assistants (ChatGPT, Claude, Copilot, etc.) to help you understand this challenge, the physics behind it, and the tools.
-**WR: Organizers, is this your intention?**
-You may also use AI tools to help write code, provided that (i) you state in your README where and how you used them, and (ii) your team can explain and defend every result you present — judges will ask. AI tools make confident mistakes on exactly this kind of physics (missing factors of $2\pi$, wrong signs, unconverged simulations presented as final). Verifying results is your responsibility, and it is part of what we judge.
-### 0.4 Deliverables and judging
-- **Code:** a notebook or scripts that reproduce every figure and number you report.
-- **Write-up:** a short README (or a markdown section in your notebook) explaining what you did, what you found, and how you checked it.
-- **Live demo:** present your results to Alice & Bob judges.
-- **Judging criteria:** correctness of the physics and the numerics (including convergence checks), clarity of code and documentation, quality of the presentation, and ingenuity on the open-ended tasks.
-- **Prizes:** 1st place, 2nd place, and Best Introductory Track submission.
-### 0.5 Units and conventions
-- We set $\hbar = 1$, so Hamiltonians are written in units of angular frequency.
-- **Time is in microseconds ($\mu$s). Rates and couplings are angular frequencies in rad/$\mu$s.**
-- Parameters are quoted as ordinary frequencies $f$ (in MHz or kHz). Convert with $\omega = 2\pi f$. Example: $g_2/2\pi = 0.763$ MHz means `g2 = 2 * jnp.pi * 0.763` in rad/$\mu$s.
-- If your results are off by a factor of about 6, you probably forgot a $2\pi$.
-- **Numerical precision:** the `dynamiqs` tutorial uses `dq.set_precision('simple')` (32-bit floats), which is fast but can be too coarse for this challenge. Use `dq.set_precision('double')`, especially for the slow decays fitted in the Standard Track.
+| final value (0.1%) | 16 (smallest tried) | 4 (smallest tried) |
+| overshoot peak (0.5%) | 24 | 10 |
+
+- **The too-small truncation is the README's 6 buffer levels.** It gives a perfect final value but an overshoot peak 11% too low, and 4.6% of the population piles up in its top buffer level. Checking only the final value would have hidden the error.
+- The top-level check agrees with the convergence scan: every run whose peak was off by more than 1% had close to 1% or more of its population in its top levels at some point, while converged runs stayed at about 0.2% or below.
+
+**What we chose.** 24 memory levels and 12 buffer levels, converged for both the final value and the peak with margin (12 vs 14 buffer levels agree to 0.002%).
+
+**Open question.** Going from 24 to 32 memory levels, the population in the top memory levels only halves (0.2% → 0.1%). For a memory holding about 7 photons we would expect almost nothing near level 30. The peak still converges, so the conclusions hold. Our unconfirmed guess is that the memory is briefly squeezed early in the inflation, which gives a long tail in photon number. See `Task_1.2.md`.
+*Figure: `1.2_convergence.png`.*
+
+> **Lesson 5:** the calm, low-photon parts of the dynamics are cheap and safe to simulate. The violent parts are where errors hide. Always check convergence on the quantity you actually report.
+
+### 1.3(a) What inflation from vacuum actually makes
+**What we did.** Took the 1.1 simulation and asked which state it actually produces, tracking:
+- the parity;
+- the average amplitude $\langle a\rangle$ (does it prefer a side?);
+- the fidelity with the even cat $|\mathcal C_+\rangle$ and with $|+\alpha\rangle$;
+- the purity.
+
+**What we saw.**
+- $\langle a\rangle$ is **exactly zero** the whole time, so the state never picks a side. Its fidelity with $|+\alpha\rangle$ settles at 0.50.
+- **The parity** starts at +1 and decays: 0.96 at 0.2 µs, 0.63 at 1 µs, 0.13 at 4 µs, with a time constant of **1.95 µs** (theory: 1.94 µs).
+- It is a true superposition, not a "one or the other" mixture:
+  - a mixture of the two blobs would have parity ≈ 0.0001, versus 0.63 here at 1 µs;
+  - the Wigner function has fringes with negative values;
+  - the value at the centre equals the parity, exactly as theory says.
+- **The best fidelity with the ideal cat is only 0.84**, at 0.63 µs.
+
+**Why.**
+- By Lesson 2, the vacuum (even) can only become the even cat, "both valleys at once".
+- Each photon that leaks out of the memory flips the parity, turning the even cat into the odd one. These random flips gradually wash out the superposition. This is the *phase-flip* error that cat qubits are known for.
+- Early on there is one more effect: the memory is briefly entangled with the busy buffer from 1.1, which lowers its purity temporarily.
+
+*Figures: `1.3a_which_state.png`, `1.3a_superposition_vs_mixture.png`.*
+
+> **Lesson 6:** "turn it on and wait" gives a fragile, decaying superposition, not a computational state. To get $|0_L\rangle$, we must do something extra (Part 2).
+
 ---
-## B. Background
-This section is shared by both tracks. Introductory Track participants should read it all; Standard Track participants can skim. Sections B.1, B.4, B.6, and B.8 overlap with the tutorials and are kept short here; the others cover material the tutorials don't.
-### B.1 Why cat qubits?
-A qubit can suffer two kinds of errors:
-- a **bit flip** ($X$ error): $|0\rangle \leftrightarrow |1\rangle$;
-- a **phase flip** ($Z$ error): the relative sign of a superposition flips, $|0\rangle + |1\rangle \to |0\rangle - |1\rangle$.
-Most qubits suffer both at comparable rates, so quantum error correction must fight both. This costs many physical qubits per protected ("logical") qubit.
-A **cat qubit** stores $|0\rangle$ and $|1\rangle$ in two states of a single microwave oscillator that are far apart from each other (Section B.4). Ordinary noise has a very hard time turning one into the other, so **bit flips are suppressed exponentially** as the qubit is made "bigger"; experiments have reached bit-flip times above ten seconds. Phase flips are *not* suppressed — they grow (linearly) with the size of the cat. Because only one type of error is left to correct, error correction becomes much cheaper (see the figure in `Tutorial__Introduction_to_Cats.ipynb`). This trade-off — bit flips down exponentially, phase flips up linearly — is the central theme of the Standard Track.
-### B.2 What is a "mode", and why are we talking about photons?
-Alice & Bob's qubits are made from **superconducting circuits** cooled to about 10 mK. A superconducting resonator (think of a tiny LC circuit, or a metal box for microwaves) can hold an oscillating electromagnetic field.
-In this challenge, **a "mode" means one specific pattern in which that field can oscillate, at one well-defined frequency** — like a single note on a guitar string. Mathematically, each mode is exactly a **quantum harmonic oscillator**. Its energy comes in discrete packets ("quanta") of size $\hbar\omega$; for electromagnetic fields these quanta are **photons**, here microwave photons at a few GHz. "The memory has 4 photons" just means "the memory oscillator is (on average) in its 4th excited level."
-We use two modes:
-- the **memory** (operator $\hat a$): long-lived; it stores the qubit;
-- the **buffer** (operator $\hat b$): deliberately leaky; it is a tool used to stabilize the memory (Section B.8).
-### B.3 Creation and annihilation operators, and $\langle \hat a^\dagger \hat a\rangle$
-The state with exactly $n$ photons in a mode is the **Fock state** $|n\rangle$ ($n = 0, 1, 2, \dots$). Two operators move between them:
-$$\hat a|n\rangle = \sqrt{n}\,|n-1\rangle \quad\text{(annihilation: removes one photon)}, \qquad \hat a^\dagger|n\rangle = \sqrt{n+1}\,|n+1\rangle \quad\text{(creation: adds one photon)}.$$
-The **number operator** $\hat n = \hat a^\dagger \hat a$ satisfies $\hat n|n\rangle = n|n\rangle$: it counts photons. Its expectation value $\langle \hat a^\dagger\hat a\rangle$ is the **average number of photons** you would find if you prepared the same state many times and counted photons each time. Similarly, $\langle\hat a\rangle$ is a complex number that plays the role of the oscillation's classical **amplitude and phase**.
-With two modes, the state space is a tensor product: $|n_a\rangle\otimes|n_b\rangle$ means $n_a$ photons in the memory and $n_b$ in the buffer. The operator $\hat a$ acts only on the memory, and $\hat b$ only on the buffer.
-### B.4 Coherent states and cat states
-A **coherent state** $|\alpha\rangle$ (with $\alpha$ a complex number) is the quantum state closest to a classical oscillating field with a definite amplitude and phase — it is what a microwave generator or a laser produces. Mathematically,
-$$|\alpha\rangle = e^{-|\alpha|^2/2}\sum_{n=0}^{\infty}\frac{\alpha^n}{\sqrt{n!}}|n\rangle, \qquad \hat a|\alpha\rangle = \alpha|\alpha\rangle, \qquad \langle\hat a^\dagger\hat a\rangle = |\alpha|^2.$$
-Physically: the photon number is not definite (it is Poisson-distributed with mean $|\alpha|^2$), but the amplitude and phase are as sharp as quantum mechanics allows.
-The states $|+\alpha\rangle$ and $|-\alpha\rangle$ have the same amplitude but **opposite phase**. For $|\alpha| \gtrsim 1.5$ they are almost perfectly distinguishable (their overlap is $|\langle\alpha|{-\alpha}\rangle|^2 = e^{-4|\alpha|^2}$). They are our two logical states:
-$$|0_L\rangle \approx |+\alpha\rangle, \qquad |1_L\rangle \approx |-\alpha\rangle.$$
-Superpositions of them are **cat states** (after Schrödinger's cat, "alive and dead at once"):
-$$|\mathcal C_\pm\rangle = \frac{|\alpha\rangle \pm |-\alpha\rangle}{\mathcal N_\pm},$$
-with normalization $\mathcal N_\pm = \sqrt{2\left(1 \pm e^{-2|\alpha|^2}\right)}$. $|\mathcal C_+\rangle$ contains only even photon numbers and $|\mathcal C_-\rangle$ only odd ones (the tutorial plots both Fock distributions). The **parity operator** $\hat P = e^{i\pi\hat a^\dagger\hat a}$ gives $+1$ on even Fock states and $-1$ on odd ones, so $\langle\hat P\rangle = \pm 1$ for $|\mathcal C_\pm\rangle$. These are the logical $|\pm_L\rangle$ states; the tutorial writes them as $\lvert\pm\rangle_\alpha$.
-### B.5 Phase space and Wigner functions
-A classical oscillator is fully described by a point in **phase space** (position $x$ and momentum $p$, or equivalently the complex amplitude $\alpha$). A quantum state can't be a point (uncertainty principle), but it can be represented by a function over phase space: the **Wigner function** $W(x,p)$.
-- It behaves like a probability distribution (it integrates to 1, and integrating over $p$ gives the probability distribution of $x$), **but it can be negative**. Negative regions are a fingerprint of genuinely quantum behavior.
-- A coherent state $|\alpha\rangle$ looks like a round Gaussian blob centered at $(\mathrm{Re}\,\alpha, \mathrm{Im}\,\alpha)$. The vacuum $|0\rangle$ is a blob at the origin.
-- A cat state looks like **two blobs** at $\pm\alpha$ **plus interference fringes** (alternating positive and negative stripes) between them. The fringes encode the superposition; their sign pattern tells you the parity.
-- A **classical mixture** of $|+\alpha\rangle$ and $|-\alpha\rangle$ ("one or the other, we don't know which") shows the two blobs but **no fringes**. This distinction matters in Task 1.3.
-`dynamiqs` computes and plots Wigner functions for you (see the tutorials; e.g. `dq.plot.wigner`, `dq.plot.wigner_mosaic`, `dq.plot.wigner_gif`). Check the axis convention of whichever function you use.
-### B.6 From the Schrödinger equation to the Lindblad equation
-**Closed systems.** An isolated system evolves by the Schrödinger equation, $i\,\frac{d}{dt}|\psi\rangle = \hat H|\psi\rangle$. The Hamiltonian $\hat H$ generates *reversible* evolution.
-**Density matrices.** If we only know that the system is in $|\psi_k\rangle$ with probability $p_k$, we describe it with the density matrix $\hat\rho = \sum_k p_k|\psi_k\rangle\langle\psi_k|$. This is also unavoidable when the system is entangled with an environment we don't keep track of. The closed-system equation becomes $\frac{d\hat\rho}{dt} = -i[\hat H,\hat\rho]$. Expectation values are $\langle\hat O\rangle = \mathrm{Tr}(\hat O\hat\rho)$.
-**Open systems.** Real devices leak energy and information into their environment. Under standard assumptions (weak coupling, memoryless environment), this adds **dissipators** to the equation of motion — the **Lindblad master equation**:
-$$\frac{d\hat\rho}{dt} = -i[\hat H,\hat\rho] + \sum_k \mathcal D_{\hat L_k}[\hat\rho], \qquad \mathcal D_{\hat L}[\hat\rho] = \hat L\hat\rho\hat L^\dagger - \tfrac12 \\{ \hat L^\dagger \hat L , \hat\rho \\}.$$
-**Notation note.** `Tutorial__OpenQuantumSystems.ipynb` puts the rate $\gamma_i$ *inside* its definition of $\mathcal D$. Here, $\mathcal D$ has no rate; the rate either multiplies it ($\kappa_a\mathcal D_{\hat a}$) or sits inside the jump operator ($\sqrt{\kappa_a}\,\hat a$, which is what you pass to `dq.mesolve`). All three describe the same physics.
-**How to read a dissipator.** Each **jump operator** $\hat L$ describes one elementary irreversible event in which the environment takes something from the system. If $\hat L = \sqrt{\kappa}\,\hat a$, the event is "one photon leaks out," and in a short time $dt$ it happens with probability $\kappa\langle\hat a^\dagger\hat a\rangle\,dt$. The term $\hat L\hat\rho\hat L^\dagger$ describes the jump itself; the anticommutator term describes how the state changes when *no* jump happens (and keeps $\mathrm{Tr}\,\hat\rho = 1$). In short: **the Hamiltonian is the reversible part, the dissipators are the irreversible part.**
-### B.7 What "photon dissipation" means physically
-No resonator is perfectly isolated: it is coupled to cables, to its packaging, and to microscopic defects in its materials. A photon in the resonator eventually escapes into one of these and never returns. This is **single-photon loss**, described by the jump operator $\sqrt{\kappa}\,\hat a$ at rate $\kappa$. The average photon number decays as $e^{-\kappa t}$.
-Two useful facts, both of which you will see in your simulations:
-- A coherent state *stays* coherent under single-photon loss; it just shrinks: $|\alpha\rangle \to |\alpha e^{-\kappa t/2}\rangle$. (Because $\hat a|\alpha\rangle = \alpha|\alpha\rangle$, losing a photon doesn't change a coherent state.)
-- A cat state does *not*: $\hat a|\mathcal C_\pm\rangle \propto |\mathcal C_\mp\rangle$. **Each lost photon flips the parity, which is a phase flip.** This is why single-photon loss in the memory ($\kappa_a$) causes phase flips but not bit flips.
-### B.8 Memory + buffer: engineering two-photon dissipation
-To *stabilize* a cat qubit, we engineer a very particular kind of dissipation in which the memory exchanges photons with its environment **only in pairs**.
-1. The memory and buffer are coupled through a nonlinear superconducting element (an asymmetrically threaded SQUID, or ATS), whose flux is modulated by a **pump** at frequency $\omega_p = 2\omega_a - \omega_b$. Energy conservation then allows exactly one process: **two memory photons ↔ one buffer photon (+ one pump photon)**. This is the term $g_2\hat a^2\hat b^\dagger + g_2\hat a^{\dagger 2}\hat b$ in the Hamiltonian below: $\hat a^2\hat b^\dagger$ destroys two memory photons and creates one buffer photon; its conjugate does the reverse.
-2. The buffer is **very lossy** ($\kappa_b \gg \kappa_a$). A buffer photon usually leaks out before it can convert back. Net effect: **the memory loses photons in pairs.**
-3. A microwave **drive on the buffer** ($\epsilon_d$) continuously injects buffer photons, which convert into pairs of memory photons. Net effect: **the memory gains photons in pairs.**
-4. Gain and loss balance at two points: the coherent states $|\pm\alpha\rangle$ with $\alpha^2 = \epsilon_d/g_2$. Any state nearby is pushed back toward one of them. Think of the memory's phase space as having two "valleys" at $\pm\alpha$.
-**Why this suppresses bit flips:** going from $+\alpha$ to $-\alpha$ requires crossing the "ridge" between the valleys. Single-photon loss keeps a coherent state coherent and at the same phase (B.7), so it doesn't push you across; the restoring dynamics push you back into your valley before you get far. The bigger $\alpha$, the farther apart the valleys and the rarer a crossing.
-**Why parity matters:** the stabilization adds and removes photons only in pairs, so by itself it never changes photon-number parity. Keep this in mind for Task 1.3.
-**The effective single-mode picture.** When the buffer is fast enough, it can be eliminated from the description entirely ("adiabatic elimination"). The memory then sees a single dissipator with jump operator
-$$\hat L_2 = \sqrt{\kappa_2}\,\big(\hat a^2 - \alpha^2\big), \qquad \kappa_2 = \frac{4 g_2^2}{\kappa_b}.$$
-Its two dark states (states that are left unchanged) are $|\pm\alpha\rangle$, since $\hat a^2|\pm\alpha\rangle = \alpha^2|\pm\alpha\rangle$. You'll use this simpler model in Task 1.0 and compare it to the full two-mode model in Task 1.1. The tutorial states the condition for this approximation as $\kappa_b \gg g_2, \epsilon_d$. Check that condition against the provided parameters before trusting the effective model (Task 1.1).
-**Matching the tutorial's notation.** The tutorial writes the drive as $+\epsilon_d^*\hat b + \epsilon_d\hat b^\dagger$ and gets $\alpha^2 = -\epsilon_d/g_2^*$. This challenge writes it as $-\epsilon_d(\hat b + \hat b^\dagger)$ with real $\epsilon_d$ and $g_2$, which gives $\alpha^2 = +\epsilon_d/g_2$. These are the same physics: $\epsilon_d^{\text{here}} = -\epsilon_d^{\text{tutorial}}$. Use the convention in this document.
-**Rotating frame.** You won't see the mode frequencies $\omega_a\hat a^\dagger\hat a$ or $\omega_b\hat b^\dagger\hat b$ in $\hat H_{2\mathrm{ph}}$ below. That's because we describe the system in a frame rotating along with each mode, which removes the fast GHz oscillation and keeps only the slow (MHz) dynamics we care about.
-### B.9 Simulating oscillators on a computer: truncation ($N_a$, $N_b$)
-An oscillator has infinitely many levels; a computer can only keep a finite number. We keep the lowest **$N_a$ Fock states of the memory** and the lowest **$N_b$ Fock states of the buffer**. The two-mode state space then has dimension $N_a N_b$, and the density matrix has $(N_a N_b)^2$ entries, so cost grows quickly.
-A truncated simulation is only trustworthy if **the population in the highest few Fock levels of each mode stays negligible at all times** — not just at the end. Check this explicitly and monitor it for both modes. To look at one mode on its own, take the partial trace over the other (`dq.ptrace` in `dynamiqs`; the tutorials don't cover this, so see the [`dynamiqs` documentation](https://www.dynamiqs.org)). The standard test is a **convergence study**: increase $N_a$ (or $N_b$), rerun, and check that the quantities you care about don't change.
-### B.10 Glossary
-| Symbol / term | Meaning |
+
+## Part 2 — Our small experiment: preparing $|0_L\rangle=|+\alpha\rangle$ (protocol A)
+
+### The question
+How do we make the oscillator land in the $+\alpha$ valley, reliably and quickly?
+
+### The idea
+Lessons 2 and 6 say that the stabilization alone cannot choose a valley. Something has to break the symmetry between left and right. Lesson 3 suggests the most direct way to do that: **just put the state where we want it, then let the stabilization hold it.**
+
+### The protocol
+1. With the stabilization **off**, apply a short (20 ns) drive to the memory that displaces it from the vacuum to the coherent state $|+2.1\rangle$. This is a "kick" along the real axis.
+2. Switch the stabilization **on** and leave it on.
+
+### What we measured
+- Fidelity with the target $|+\alpha\rangle$.
+- Population left in the wrong valley.
+- Parity.
+- Buffer photons.
+
+Everything was simulated in the full two-mode model, over 3 µs.
+
+### Results
+*Figure: `1.3b_A_wigner.png`. The blob jumps from the origin to $+2.1$ during the 20 ns pulse and then simply stays there.*
+
+| Quantity | Inflate from vacuum (1.1 / 1.3a) | **Protocol A** |
+|---|---|---|
+| Fidelity with $\lvert+\alpha\rangle$ | 0.50 (no valley chosen) | **0.99998** |
+| Time to reach it | never | **20 ns** (the pulse length) |
+| Still there after 3 µs? | the cat fades with a time constant of 1.95 µs | **yes, unchanged** |
+| Wrong-valley population | 50% | **< 10⁻⁵** |
+| Memory photon overshoot | 6.9 photons | **none** (stays at 4.4) |
+| Buffer photons (peak) | ≈ 2 | **0.00003** |
+| Parity | starts at +1, decays | ≈ 0, as expected for a single valley |
+
+### A mini robustness experiment (A′): how sloppy can the kick be?
+A real pulse is never perfectly calibrated. We deliberately started from imperfect kicks, too weak, too strong or in the wrong direction, and let the stabilization act.
+*Figure: `1.3b_Aprime_scans.png`.*
+
+| Kick | Final fidelity with $\lvert+\alpha\rangle$ |
 |---|---|
-| $\hat a$, $\hat a^\dagger$ | Annihilation / creation operator of the memory mode |
-| $\hat b$, $\hat b^\dagger$ | Annihilation / creation operator of the buffer mode |
-| $\langle\hat a^\dagger\hat a\rangle$ | Mean photon number in the memory |
-| $\alpha$ | Cat amplitude; $\alpha^2$ is the target mean photon number |
-| $g_2$ | Two-photon exchange rate between memory and buffer |
-| $\epsilon_d$ | Buffer drive amplitude; sets $\alpha^2 = \epsilon_d/g_2$ |
-| $\kappa_a$ | Memory single-photon loss rate (causes phase flips). Called $\kappa_1$ in the slide deck |
-| $\kappa_b$ | Buffer single-photon loss rate (part of the engineered stabilization) |
-| $\kappa_2$ | Effective two-photon dissipation rate, $4g_2^2/\kappa_b$ |
-| $N_a$, $N_b$ | Number of Fock states kept for memory / buffer in the simulation |
-| $\hat P$ | Photon-number parity, $e^{i\pi\hat a^\dagger\hat a}$ |
-| $\Gamma_X$, $T_X$ | Bit-flip rate and time, $T_X = 1/\Gamma_X$ |
-| $\Gamma_Z$ | Phase-flip rate |
+| perfect ($\beta=2.1$, no phase error) | 0.99999 |
+| 30% too weak ($\beta=1.5$) / 30% too strong ($\beta=2.7$) | 0.9988 / 0.9994 |
+| half strength ($\beta=1.0$) | 0.978 |
+| aimed 22° off the real axis | 0.998 |
+| aimed 45° off | 0.972 |
+| aimed 67° off | 0.83 |
+
+**What this shows**
+- **The kick only has to land in the right valley's catchment area.** The stabilization does the rest, rolling the state into the bottom of the valley and even rotating it back onto the axis.
+- The error that remains is simply the part of the initial blob that starts on the wrong side of the ridge.
+- **Strength barely matters, but direction does.** The phase of the drive relative to the cat axis is the one thing that must be calibrated carefully.
+- Other checks:
+  - the pulse length, anywhere from 10 to 100 ns, makes no difference;
+  - leaving the stabilization on during the pulse still gives 0.99993.
+
 ---
-## The model and parameters (both tracks)
-The full two-mode model (Réglade, Bocquet *et al.*, [arXiv:2307.06617](https://arxiv.org/abs/2307.06617), with $g_2$ taken real) is
-$$\hat H_{2\mathrm{ph}} = g_2\hat a^2 \hat b^\dagger + g_2\hat a^{\dagger 2}\hat b - \epsilon_d\hat b - \epsilon_d\hat b^\dagger$$
-with the Lindblad master equation
-$$\frac{d\hat\rho}{dt} = -i\left[\hat H_{2\mathrm{ph}}, \hat\rho\right] + \kappa_b\mathcal D_{\hat b}[\hat\rho] + \kappa_a\mathcal D_{\hat a}[\hat\rho],$$
-i.e. jump operators $\sqrt{\kappa_b}\,\hat b$ and $\sqrt{\kappa_a}\,\hat a$. Reading it with Section B.8 in mind: the first two terms of $\hat H_{2\mathrm{ph}}$ convert photon pairs; the last two are the buffer drive; $\kappa_b$ empties the buffer; $\kappa_a$ is the unwanted memory loss.
-**Provided parameters** (fitted experimental values, Réglade *et al.*, Table S2 — quoted as ordinary frequencies; convert with $\omega = 2\pi f$, see 0.5):
-| Quantity | Value |
+
+## Part 3 — What protocol A means, and how it connects to everything before
+
+### Each earlier lesson explains part of the result
+
+| Earlier finding | What it means for protocol A |
 |---|---|
-| $g_2/2\pi$ | $0.763$ MHz |
-| $\kappa_b/2\pi$ | $2.6$ MHz |
-| $\kappa_a/2\pi$ | $9.3$ kHz |
-| target $\alpha$ | $2.1$ (so $\epsilon_d = \alpha^2 g_2$) |
-**Suggested starting truncations:** $N_a = 24$ (memory), $N_b = 6$ (buffer). These are starting points, *not* verified values. At least one of them is too small for part of the dynamics in Task 1.1 — finding out which, and how you know, is part of Task 1.2.
-**Starter code** (see the tutorials for details; API names may differ slightly between `dynamiqs` versions):
-```python
-import dynamiqs as dq
-import jax.numpy as jnp
-dq.set_precision('double')         # see Section 0.5
-Na, Nb = 24, 6
-a, b = dq.destroy(Na, Nb)          # a acts on the memory, b on the buffer
-g2      = 2 * jnp.pi * 0.763       # rad/us
-kappa_b = 2 * jnp.pi * 2.6         # rad/us
-kappa_a = 2 * jnp.pi * 9.3e-3      # rad/us
-alpha   = 2.1
-eps_d   = alpha**2 * g2
-H = g2 * (a @ a @ b.dag()) + g2 * (a.dag() @ a.dag() @ b) - eps_d * (b + b.dag())
-jump_ops = [jnp.sqrt(kappa_b) * b, jnp.sqrt(kappa_a) * a]
-psi0  = dq.tensor(dq.fock(Na, 0), dq.fock(Nb, 0))   # vacuum in both modes
-tsave = jnp.linspace(0.0, 2.0, 201)                  # us
-res = dq.mesolve(H, jump_ops, psi0, tsave, exp_ops=[a.dag() @ a, b.dag() @ b])
-```
-> 🔧 **REVIEW:** kept because no tutorial builds a two-mode system. API usage matches the tutorials except `dq.destroy(Na, Nb)` returning a tuple and `dq.ptrace`, which should be run once before release.
----
-## 1. Introductory Track: Stabilizing and Preparing a Cat Qubit
-You'll build up the cat qubit one ingredient at a time. Each task has a **"What you should see"** box describing the expected behavior, so you can tell whether your simulation is working before you move on. If your result disagrees with the box, that's worth investigating — it's either a bug or something interesting.
-### Task 1.0: Warm-up — adding dissipation one ingredient at a time
-Use a **single mode** (just the memory, $N = 30$) for this task. Times in $\mu$s, rates in rad/$\mu$s.
-**(a) Single-photon loss, in physical units.** Section 2 of `Tutorial__Dynamiqs.ipynb` simulates a coherent state rotating and losing photons in dimensionless units. Redo it in this challenge's units: $\hat H = \Delta\,\hat a^\dagger\hat a$ with $\Delta/2\pi = 1$ MHz, jump operator $\sqrt{\kappa}\,\hat a$ with an exaggerated $\kappa/2\pi = 1$ MHz, initial state $|\alpha_0 = 2\rangle$, and $0 \le t \le 1\ \mu$s. Overlay the analytic prediction $\langle\hat a^\dagger\hat a\rangle = |\alpha_0|^2 e^{-\kappa t}$ on your simulation.
-> **What you should see.** The simulation and the analytic curve agree. The Wigner blob spirals toward the origin and *stays round*: the state remains a coherent state, just a smaller one (Section B.7). With $\kappa = 0$, it would circle the origin once per microsecond with $\langle\hat a^\dagger\hat a\rangle = 4$ constant.
-**(b) Pure two-photon loss.** Set $\hat H = 0$ and use the single jump operator $\sqrt{\kappa_2}\,\hat a^2$, where $\kappa_2 = 4g_2^2/\kappa_b$ from the provided parameters. Same initial state. Simulate long enough that $\langle\hat a^\dagger\hat a\rangle$ stops changing.
-> **What you should see.** The photon number drops quickly at first, then **stalls at a value well above zero** (close to 0.5). Question to think about: which Fock states does $\hat a^2$ leave untouched? What fraction of the initial coherent state was in them? (You'll come back to this in Task 1.3.)
-**(c) Stabilization: two-photon loss + two-photon drive.** The last cell of `Tutorial__Introduction_to_Cats.ipynb` does this in dimensionless units ($\kappa_2 = 1$, $\alpha = 2$). Redo it with the provided parameters: jump operators $\sqrt{\kappa_2}\,(\hat a^2 - \alpha^2\,\hat{\mathbb 1})$ with $\alpha = 2.1$ and $\sqrt{\kappa_a}\,\hat a$, starting from vacuum $|0\rangle$, for $0\le t\le 2\ \mu$s. Then **gradually change the strength of the dissipation**: repeat with $\kappa_2 \to \kappa_2/4$ and $\kappa_2 \to 4\kappa_2$, and plot all three $\langle\hat a^\dagger\hat a\rangle(t)$ curves together. (The tutorial's batching section shows how to run all three in one call.)
-> **What you should see.** $\langle\hat a^\dagger\hat a\rangle$ rises smoothly and monotonically from 0 and settles at $\approx\alpha^2 = 4.41$ within a few hundred nanoseconds at the nominal $\kappa_2$. The Wigner function goes from one blob at the origin to two blobs at $\pm\alpha$ with fringes between them. Changing $\kappa_2$ changes *how fast* the state settles (roughly $\propto 1/\kappa_2$ — can you argue why this would be exact if $\kappa_a = 0$?) but not *where* it settles. **This is the "ideal" behavior of a stabilized cat qubit**, and your reference for Task 1.1.
-### Task 1.1: The full two-mode model — inflating a cat
-Now use the full two-mode model (memory + buffer) with the provided parameters and the starter code above. Starting from vacuum in both modes, simulate the "inflation" of the memory into the cat manifold. Simulate for long enough to reach steady state ($2\ \mu$s is a reasonable starting guess; confirm it actually covers the transient).
-- Plot $\langle\hat a^\dagger\hat a\rangle(t)$ and $\langle\hat b^\dagger\hat b\rangle(t)$.
-- **Monitor your truncation:** also plot the population in the top two Fock levels of the memory and the top Fock level of the buffer versus time (Section B.9). Hint: build projectors onto those levels, or partial-trace to each mode and read off the diagonal of its density matrix.
-- Produce Wigner-function snapshots of the memory mode (partial-trace out the buffer) through the inflation transient — a mosaic or a GIF both work.
-- Overlay your $\langle\hat a^\dagger\hat a\rangle(t)$ from Task 1.0(c) (nominal $\kappa_2$). Describe how the two-mode evolution differs from the effective model, and propose a reason. Hint: the tutorial says the effective model needs $\kappa_b \gg g_2, \epsilon_d$. Compute $g_2/\kappa_b$ and $\epsilon_d/\kappa_b$ for the provided parameters. Is the condition satisfied?
-> **What you should see (with a converged truncation).** Unlike Task 1.0(c), $\langle\hat a^\dagger\hat a\rangle$ **overshoots** well above $\alpha^2$ within the first few hundred nanoseconds, then rings down and settles within about 1% of $\alpha^2$ after roughly $1\ \mu$s. $\langle\hat b^\dagger\hat b\rangle$ jumps up early in the transient (to a peak of order a couple of photons — compare that to $N_b$!) and then decays to nearly zero in steady state. The Wigner snapshots show the blob at the origin stretching out and splitting into two blobs at $\pm\alpha$ with interference fringes between them. Over several microseconds the fringes slowly fade — that's single-photon loss $\kappa_a$ causing phase flips (Section B.7), which the Standard Track measures in Task 2.2.
-### Task 1.2: Semiclassical sanity check and convergence study
-Compare your simulated steady-state $\langle\hat a^\dagger\hat a\rangle$ to the semiclassical prediction $\alpha^2 = \epsilon_d/g_2$. If they disagree by more than a few percent, determine whether that's a real physical effect or a numerical artifact, and support your conclusion with an explicit convergence study.
-Your convergence study should:
-- vary $N_a$ and $N_b$ **separately** (e.g. $N_a \in \\{16, 20, 24, 32\\}$ at fixed $N_b$, then $N_b \in \\{4, 6, 8, 10, 12\\}$ at fixed $N_a$);
-- check **two** quantities: the steady-state $\langle\hat a^\dagger\hat a\rangle$ *and* a transient feature, such as the peak value of $\langle\hat a^\dagger\hat a\rangle(t)$ during the overshoot;
-- report, for each, the smallest $N_a$ and $N_b$ at which the result stops changing (to a tolerance you state).
-Are the steady state and the transient equally sensitive to truncation? Which truncation matters for which, and why physically?
-### Task 1.3 — Open-ended: preparing a logical state
-The state you prepared in Task 1.1 is *not* a single logical codeword $|+\alpha\rangle$ or $|-\alpha\rangle$ — starting from vacuum, you should find that (on timescales short compared with the phase-flip time, roughly $1/(2\kappa_a\alpha^2)$) it is the symmetric superposition of both.
-a) Identify what state you actually prepared, and justify it. The cats tutorial tells you the answer for the *effective* model; here you must **demonstrate it quantitatively in the two-mode model**:
-   - Explain *why*, analytically (which quantity is conserved? recall Task 1.0(b); what is $\langle\hat P\rangle$ for the vacuum?).
-   - Track at least two quantities over time from your Task 1.1 simulation: e.g. $\langle\hat P\rangle(t)$, the fidelity of the memory state with $|\mathcal C_+\rangle$, and the purity $\mathrm{Tr}(\hat\rho_a^2)$ of the memory state.
-   - Show that it is a *superposition* and not a *mixture* of $|\pm\alpha\rangle$ (Section B.5), and estimate from your data how long it stays one.
-b) Propose a method to prepare a definite computational basis state instead (e.g. $|0_L\rangle \equiv |+\alpha\rangle$), and demonstrate it numerically. (A starting idea: what if the memory doesn't start in vacuum? Or: what could break the $\alpha\to-\alpha$ symmetry during inflation?) Quantify how well you did, e.g. via $\mathrm{Re}\langle\hat a\rangle$ or the fidelity with $|+\alpha\rangle$.
-c) What does your method cost — extra control lines, calibration, interaction with the stabilization mechanism itself? Discuss briefly.
----
-## 2. Standard Track: Characterizing Errors and Optimizing Readout
-Cat qubits are noise-biased: the two-photon dissipation channel exponentially suppresses bit-flip ($X$) errors as $\alpha$ grows, while phase-flip ($Z$) errors grow only linearly — the physical origin of a $10^7$ bias at typical operating points (Section B.1). This track asks you to (1) verify that scaling numerically, then (2) characterize and optimize a readout scheme built on the same physics.
-Reuse $\hat H_{2\mathrm{ph}}$, the jump operators, and `dynamiqs` from the Introductory Track (we recommend running Tasks 1.0(c) and 1.1 first as a setup check — see 0.1). Note a notational reconciliation: the reference slide deck's "$\kappa_1$" (single-photon memory loss) is this document's $\kappa_a$. Truncations must be re-checked for each $\alpha$ you use: the memory needs more Fock states as $\alpha^2$ grows, and the buffer transient can be larger than its steady state suggests (Task 1.2).
-**Task 2.1: Extracting the bit-flip rate $\Gamma_X$**
-Initialize the memory in $|\alpha\rangle \approx |0_L\rangle$ (buffer in vacuum) and evolve under $\hat H_{2\mathrm{ph}}$ plus the same jump operators as Track 1. Coherent states are quasi-eigenstates of single-photon loss, so a bit flip isn't a discrete "click" — it shows up as the slow, ensemble-averaged decay of $\mathrm{Re}\langle\hat a\rangle(t)$ toward zero. Fit this decay to extract $\Gamma_X = 1/T_X$.
-$T_X$ grows exponentially with $\alpha^2$, so this is only numerically tractable at small $\alpha$ (roughly $\alpha \lesssim 1.4$) — pushing much higher makes the simulation intractable within reasonable wall-clock time. That's the physics showing up as a numerical wall, not a bug.
-- Verify $\Gamma_X \propto e^{-\gamma\alpha^2}$ with a log-linear fit across a few $\alpha$ values. Compare your fitted $\gamma$ to the reference deck's $\gamma \lesssim 2$ bound — treat this as a coarse consistency check, not a precision target.
-- **Discussion (not separately graded, but worth writing up):** work out the scaling you'd get from a naive Fermi's-Golden-Rule estimate of the direct matrix element connecting $|+\alpha\rangle$ and $|-\alpha\rangle$. Does it match your simulation? If not, why not?
-> 🔧 **REVIEW (David):** this model has no thermal photons ($n_{\mathrm{th}} = 0$). Earlier notebook work found that $n_{\mathrm{th}} = 0$ gives $\gamma > 2$, while the deck's $\gamma \lesssim 2$ reflects thermal population in the experiment. If that holds, participants who do everything right will "fail" this consistency check. Consider rewording to "compare to $\gamma \approx 2$ and explain any discrepancy," or adding a thermal jump operator $\sqrt{\kappa_a n_{\mathrm{th}}}\,\hat a^\dagger$.
-**Task 2.2: Extracting the phase-flip rate $\Gamma_Z$**
-Initialize in the even-parity superposition $|+\rangle_L = (|\alpha\rangle + |-\alpha\rangle)/\mathcal N$ and track the parity $\langle \hat P(t)\rangle = \langle e^{i\pi \hat a^\dagger \hat a}\rangle$; fit its decay to get $\Gamma_Z$. Unlike $\Gamma_X$, this does *not* require small $\alpha$ — run directly at the physical target $\alpha = 2.1$ from Track 1.
-Verify the predicted linear scaling $\Gamma_Z = 2\kappa_a\alpha^2$ by sweeping $\alpha$, and compare your fitted slope to $2\kappa_a$.
-**Task 2.3: Transmon-free memory-bit readout**
-Physical picture: displacing the memory slightly imprints information about which well ($\pm\alpha$) it occupies onto the buffer, which can then be read out without a transmon-based dispersive measurement.
-Add a memory drive $\hat H_Z = \epsilon_Z\hat a^\dagger + \epsilon_Z\hat a$ (real $\epsilon_Z$) to $\hat H_{2\mathrm{ph}}$.
-- Simulate $\langle\hat b\rangle(t)$ starting from each codeword ($\pm\alpha$) and show the two produce distinguishable, opposite-sign steady-state $\langle\hat b\rangle$ — your readout contrast. You may use the linearized estimate $\langle\hat b\rangle_{\rm ss} \approx \mp\epsilon_Z/(2\alpha g_2)$ as a sanity check.
-- Choose $\epsilon_Z$ conservatively (well below $g_2$) for now — you'll revisit this choice in Task 2.4.
-- Determine how long you need to evolve before $\langle\hat b\rangle$ settles, and whether it approaches steady state monotonically or with oscillation. This matters for how you'd design an actual readout protocol.
-**Task 2.4 — Open-ended / capstone: Optimizing the readout**
-So far, $\hat H_Z$ was added to $\hat H_{2\mathrm{ph}}$ by hand. In a real device, the two-photon exchange, the buffer drive, and any readout drive all originate from one circuit-level Hamiltonian:
-$$\hat H_{\rm circuit} = \omega_a\hat a^\dagger\hat a + \omega_b \hat b^\dagger \hat b - 2E_J\cos(\varphi_\Sigma)\cos(\hat\varphi+\varphi_\Delta), \qquad \hat\varphi = \varphi_a(\hat a+\hat a^\dagger)+\varphi_b(\hat b+\hat b^\dagger)$$
-with the ATS biased at $\varphi_\Delta = \pi/2$ and a parametric flux pump $\varphi_\Sigma \to -\pi/2 + \epsilon_p\cos(\omega_p t)$. At this bias point, $\cos(\varphi_\Sigma)\cos(\hat\varphi + \varphi_\Delta) \approx -\epsilon_p\cos(\omega_p t)\sin\hat\varphi$, so the ATS term is (to first order in $\epsilon_p$) $2E_J\epsilon_p\cos(\omega_p t)\sin\hat\varphi$. Expanding $\sin\hat\varphi$ and moving to the frame rotating at $\omega_a$, $\omega_b$, with $\omega_p = 2\omega_a - \omega_b$, generates $g_2\hat a^2\hat b^\dagger + \mathrm{h.c.}$ as the leading resonant term, with
-$$g_2 = \tfrac12 E_J\,\epsilon_p\,\varphi_a^2\,\varphi_b.$$
-The buffer drive $\epsilon_d$ enters as a separate microwave drive on the buffer at $\omega_b$. The full derivation is in the slide deck.
-> 🔧 **REVIEW:** the cats tutorial lists "basic circuit QED" and "how to obtain an approximate Hamiltonian" as learning goals but contains neither. Add this to slide deck.
-**Illustrative circuit parameters.** These are chosen to be self-consistent with $g_2$ above and to avoid accidental resonances between low-order processes. They are *not* the parameters of a specific device.
-| Quantity | Value |
-|---|---|
-| $\omega_a/2\pi$ | $4.0$ GHz |
-| $\omega_b/2\pi$ | $4.8$ GHz |
-| $\omega_p/2\pi = (2\omega_a - \omega_b)/2\pi$ | $3.2$ GHz |
-| $E_J/2\pi$ | $40$ GHz |
-| $\varphi_a$ (memory zero-point phase fluctuation) | $0.06$ |
-| $\varphi_b$ (buffer zero-point phase fluctuation) | $0.3$ |
-| $\epsilon_p$ (pump amplitude, rad) | $\approx 0.035$, fixed by $g_2/2\pi = 0.763$ MHz via the formula above |
-| $\kappa_a$, $\kappa_b$, $\alpha$ | As in the provided-parameters table |
-**A note on tractability.** Simulating $\hat H_{\rm circuit}$ directly means resolving GHz oscillations over microsecond timescales, which is expensive. Reasonable approaches include: simulating short time windows; working in the rotating frame while keeping the time-dependent non-resonant terms up to a chosen order in $\hat\varphi$ (see the `dynamiqs` documentation on time-dependent Hamiltonians, e.g. `dq.modulated`); reducing truncations; or deriving effective corrections analytically (e.g. to second order in the non-resonant terms) and simulating those. State which approach you use and why it is justified.
-This task is intentionally open-ended. There is no single expected answer; we want to see how far you push it.
-a) Work out how a memory readout drive actually enters this circuit-level Hamiltonian, and what other terms beyond the two-photon term you've used so far survive the same expansion and rotating-wave step.
-b) Numerically investigate what happens to your readout contrast (Task 2.3) and to $\Gamma_X$ (Task 2.1) as you increase $\epsilon_Z$. Is there a trade-off? Where does it come from physically?
-c) Propose and numerically demonstrate a strategy to improve readout contrast and/or readout speed without significantly degrading $\Gamma_X$ — a control-level idea (e.g., shaping the drive in time or frequency) or a hardware/parameter-level one are both fair game.
-d) Justify why your strategy works, using your simulations as evidence.
+| **Lesson 1** (1.0a): photon loss shrinks a coherent state but never flips it | The prepared $\lvert+\alpha\rangle$ is **immune to the error that destroyed the cat in 1.3(a)**. It stays put, while the cat faded in about 2 µs. |
+| **Lesson 2** (1.0b): pair processes conserve parity | This is *why* a kick is needed: the stabilization alone can never choose a valley. The kick creates a state with no fixed parity, which frees the stabilization to settle into one valley. |
+| **Lesson 3** (1.0c): $\lvert\pm\alpha\rangle$ are resting points | After the kick the state is *already* at a resting point, so the stabilization has nothing to do. That's why the fidelity is reached in 20 ns instead of hundreds. |
+| **Lesson 4** (1.1): inflation from vacuum overshoots, rings and fills the buffer | Protocol A **skips the violent transient entirely**: no overshoot, about 0 buffer photons. The memory starts exactly where the drive and pair loss balance. |
+| **Lesson 5** (1.2): calm dynamics are easy to simulate, violent ones are not | Protocol A stays at low photon number with an empty buffer. Its results are the **least sensitive to simulation truncation** of anything we ran, which makes this the most trustworthy number in the report. |
+| **1.2** steady state slightly below $\alpha^2$ because of photon loss | This sets the tiny remaining infidelity: the stabilized state is a hair smaller than $\lvert2.1\rangle$ (mean amplitude 0.9992 × 2.1). |
+| **Lesson 6** (1.3a): vacuum inflation gives a fragile cat | Protocol A gives a *computational* state instead. Same hardware, different first 20 ns. |
+
+### Implications
+1. **Preparing $|0_L\rangle$ is easy; it is $|\pm_L\rangle$ (the cats) that are fragile.** This is the cat qubit's central bargain seen from the preparation side. States in one valley are protected; superpositions of the two valleys suffer phase flips. Our simulations show both sides: 0.99998 held for 3 µs versus a cat fading in about 2 µs.
+2. **The stabilization acts as a built-in error corrector for preparation.** Because it pulls any state in a valley's catchment area to the bottom, a coarse, imperfect pulse is good enough. In hardware this means cheap calibration, except for the drive phase.
+3. **Hardware cost is small.** All protocol A needs is a drive line on the memory, which cat-qubit devices typically already have for gates and measurement, plus phase-locking that drive to the pump. This matches how experiments actually prepare these states (Réglade *et al.*, *Nature* 2024).
+4. **It sidesteps the device's weakest regime.** The 1.1 transient (buffer not fast enough, large overshoot) is exactly where our simple model broke down and our simulations were hardest to converge. Avoiding it is good for the real device too: fewer photons means fewer opportunities for unwanted nonlinear effects.
+5. **To prepare $|1_L\rangle=|-\alpha\rangle$, kick the other way.** The same protocol works with the drive phase flipped by 180°. By symmetry, the results are identical.
+
+### Caveats
+Our pulses are idealized square pulses, and we did not model:
+- pump switch-on transients;
+- frequency shifts caused by the pump;
+- memory nonlinearity (Kerr);
+- thermal photons.
+
+Each would add some error. The robustness experiment suggests the stabilization would absorb much of it, as long as the state starts on the right side of the ridge. Fidelities are only trustworthy to about $10^{-4}$, because of the solver tolerance.
+
+### What we would try next
+- Add a realistic pulse shape, memory Kerr and pump switch-on dynamics, and re-measure the robustness map.
+- Measure how long a protocol-A state keeps its valley under realistic noise, connecting preparation to the bit-flip and phase-flip rates studied in the Standard Track.
+
+*AI use: an AI assistant (Claude Code) helped write the code and text and ran the simulations. The team must verify, and be able to defend, every result.*
